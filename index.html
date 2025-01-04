@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Test</title>
+        <style>
+            button {
+                cursor: pointer;
+            }
+            table {
+                border-collapse: collapse;
+            }
+            .cell {
+                width: 12px;
+                height: 12px;
+                border: 1px solid grey;
+                cursor: pointer;
+            }
+            .green {
+                background-color: green;
+            }
+            .red {
+                background-color: red;
+            }
+        </style>
+        <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    </head>
+    <body>
+        <button id="undo" onclick="undo()" disabled>Undo</button>
+        <table><tbody id="container"></tbody></table>
+    </body>
+    <script>
+        const socket = io("http://localhost:5000");
+        const action = [];
+        function clickCell(i, j) {
+            document.getElementById("undo").disabled = false
+            action.push({i, j});
+            socket.emit("user-click", {col: i, row: j})
+        }
+        function undo() {
+            const cell = action.pop();
+            if (action.length === 0) {
+                document.getElementById("undo").disabled = true;
+            }
+            socket.emit("user-click", {col: cell.i, row: cell.j})
+        }
+        function draw(grid) {
+            let container = "";
+            for (let i = 0; i < 50; i++){
+                let html = "<tr>";
+                for (let j = 0; j < 80; j++) {
+                    html += "<td class='cell " + (grid[i] && grid[i][j] ? "red" : "green") + "' onclick='clickCell(" + i + ", " + j +")'></td>";
+                }
+                html += "</tr>";
+                container += html;
+            }
+            document.getElementById("container").innerHTML = container;
+        }
+        socket.on("update", ({grid}) => {
+            draw(grid);
+        })
+    </script>
+</html>
